@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VideoConnect — Nearby Chat</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #252836;
+    --border: #2e3147;
+    --accent: #6c63ff;
+    --accent2: #4ecca3;
+    --text: #e8e8f0;
+    --muted: #888aaa;
+    --danger: #ff5555;
+    --success: #4ecca3;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #auth-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: radial-gradient(ellipse at center, #1a1d3a 0%, #0f1117 70%);
+  }
+
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    width: 380px;
+    max-width: 90vw;
+  }
+
+  .auth-title {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+
+  .auth-subtitle { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+  .tabs {
+    display: flex; gap: 4px;
+    background: var(--bg);
+    border-radius: 10px; padding: 4px; margin-bottom: 24px;
+  }
+
+  .tab-btn {
+    flex: 1; padding: 8px; border: none; border-radius: 8px;
+    background: transparent; color: var(--muted);
+    cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;
+  }
+
+  .tab-btn.active { background: var(--surface2); color: var(--text); }
+
+  .field { margin-bottom: 16px; }
+
+  .field label {
+    display: block; font-size: 12px; color: var(--muted);
+    margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  .field input {
+    width: 100%; padding: 12px 14px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 15px;
+    outline: none; transition: border-color 0.2s;
+  }
+
+  .field input:focus { border-color: var(--accent); }
+  .loc-row { display: flex; gap: 10px; }
+
+  .btn-primary {
+    width: 100%; padding: 13px; background: var(--accent);
+    border: none; border-radius: 10px; color: white;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    margin-top: 8px; transition: opacity 0.2s;
+  }
+
+  .btn-primary:hover { opacity: 0.85; }
+
+  .btn-loc {
+    padding: 12px 14px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--accent2); font-size: 13px; cursor: pointer; white-space: nowrap;
+  }
+
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 20px 0; color: var(--muted); font-size: 13px;
+  }
+
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .btn-skip {
+    width: 100%; padding: 13px; background: transparent;
+    border: 2px solid var(--accent2); border-radius: 10px;
+    color: var(--accent2); font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+
+  .btn-skip:hover { background: rgba(78,204,163,0.1); }
+
+  .error-msg {
+    background: rgba(255,85,85,0.12); border: 1px solid rgba(255,85,85,0.3);
+    border-radius: 8px; color: var(--danger);
+    padding: 10px 14px; font-size: 13px; margin-top: 12px; display: none;
+  }
+
+  /* NAME POPUP */
+  #name-popup {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75); z-index: 999;
+    align-items: center; justify-content: center;
+  }
+
+  #name-popup.show { display: flex; }
+
+  .name-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 40px; width: 340px;
+    max-width: 90vw; text-align: center;
+  }
+
+  .name-emoji { font-size: 48px; margin-bottom: 16px; }
+
+  .name-card h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+
+  .name-card p { color: var(--muted); font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+
+  .name-card input {
+    width: 100%; padding: 14px 16px;
+    background: var(--bg); border: 2px solid var(--border);
+    border-radius: 12px; color: var(--text); font-size: 18px;
+    outline: none; text-align: center; margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+
+  .name-card input:focus { border-color: var(--accent2); }
+
+  .name-card .btn-go {
+    width: 100%; padding: 14px; background: var(--accent2);
+    border: none; border-radius: 12px; color: #0f1117;
+    font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity 0.2s;
+  }
+
+  .name-card .btn-go:hover { opacity: 0.85; }
+
+  /* MAIN APP */
+  #app-screen { display: none; flex-direction: column; height: 100vh; }
+
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-size: 18px; font-weight: 700; color: var(--accent); }
+
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: orange; animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .username-badge { font-size: 13px; color: var(--muted); }
+
+  .btn-logout {
+    padding: 6px 14px; background: transparent;
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--muted); font-size: 13px; cursor: pointer; transition: all 0.2s;
+  }
+
+  .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+  .conn-status { font-size: 12px; padding: 4px 12px; border-radius: 20px; font-weight: 500; }
+  .conn-status.connected    { background: rgba(78,204,163,0.15); color: var(--success); }
+  .conn-status.disconnected { background: rgba(255,85,85,0.12);  color: var(--danger); }
+  .conn-status.connecting   { background: rgba(255,165,0,0.12);  color: orange; }
+
+  .main-layout { display: flex; flex: 1; overflow: hidden; }
+
+  .sidebar {
+    width: 220px; background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+
+  .sidebar-title {
+    padding: 14px 16px 10px; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .online-count {
+    background: var(--accent); color: white;
+    font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600;
+  }
+
+  #user-list { flex: 1; overflow-y: auto; padding: 8px; }
+
+  .user-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px; border-radius: 8px; margin-bottom: 4px; transition: background 0.15s;
+  }
+
+  .user-item:hover { background: var(--surface2); }
+
+  .user-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: white; flex-shrink: 0;
+  }
+
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-dist { font-size: 11px; color: var(--accent2); margin-top: 1px; }
+
+  .no-users { text-align: center; color: var(--muted); font-size: 13px; padding: 30px 16px; line-height: 1.6; }
+
+  .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  #messages {
+    flex: 1; overflow-y: auto; padding: 20px;
+    display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth;
+  }
+
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .msg { display: flex; flex-direction: column; max-width: 75%; }
+  .msg.mine   { align-self: flex-end;   align-items: flex-end; }
+  .msg.theirs { align-self: flex-start; align-items: flex-start; }
+  .msg.system { align-self: center;     align-items: center; max-width: 100%; }
+
+  .msg-sender { font-size: 11px; color: var(--muted); margin-bottom: 4px; padding: 0 4px; }
+
+  .msg-bubble { padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.5; word-break: break-word; }
+  .msg.mine   .msg-bubble { background: var(--accent); color: white; border-bottom-right-radius: 4px; }
+  .msg.theirs .msg-bubble { background: var(--surface2); color: var(--text); border-bottom-left-radius: 4px; }
+  .msg.system .msg-bubble { background: transparent; color: var(--muted); font-size: 12px; font-style: italic; }
+
+  .msg-time { font-size: 10px; color: var(--muted); margin-top: 4px; padding: 0 4px; }
+
+  .msg-image { max-width: 240px; border-radius: 12px; cursor: pointer; }
+  .msg-file {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; text-decoration: none; color: var(--text);
+  }
+
+  .input-area {
+    padding: 16px 20px; background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0;
+  }
+
+  #msg-input {
+    flex: 1; padding: 12px 16px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 12px;
+    color: var(--text); font-size: 15px; outline: none;
+    resize: none; max-height: 120px; line-height: 1.4; transition: border-color 0.2s;
+  }
+
+  #msg-input:focus { border-color: var(--accent); }
+  #msg-input::placeholder { color: var(--muted); }
+
+  .btn-send {
+    width: 46px; height: 46px; border-radius: 12px;
+    background: var(--accent); border: none; color: white;
+    font-size: 20px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  .btn-attach {
+    width: 46px; height: 46px; border-radius: 12px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); font-size: 20px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  .upload-indicator { font-size: 12px; color: var(--accent2); padding: 4px 16px; display: none; }
+
+  @media (max-width: 600px) {
+    .sidebar { width: 64px; }
+    .user-info, .sidebar-title span:first-child { display: none; }
+    .user-avatar { margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-title">📡 VideoConnect</div>
+    <div class="auth-subtitle">5 km ke andar logon se connect karo</div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('login')">Login</button>
+      <button class="tab-btn" onclick="switchTab('signup')">Signup</button>
+    </div>
+
+    <div id="login-form">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="login-username" placeholder="username daalo">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="password">
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Login karo</button>
+      <div class="divider">ya</div>
+      <button class="btn-skip" onclick="showNamePopup()">⚡ Skip — Seedha Chat Karo</button>
+    </div>
+
+    <div id="signup-form" style="display:none">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="signup-username" placeholder="unique username chuno">
+      </div>
+      <div class="field">
+        <label>Password (min 6 characters)</label>
+        <input type="password" id="signup-password" placeholder="password">
+      </div>
+      <div class="field">
+        <label>Location</label>
+        <div class="loc-row">
+          <input type="number" id="signup-lat" placeholder="Latitude"  step="any" style="flex:1">
+          <input type="number" id="signup-lon" placeholder="Longitude" step="any" style="flex:1">
+          <button class="btn-loc" onclick="getLocation()">📍 GPS</button>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="doSignup()">Account banao</button>
+      <div class="divider">ya</div>
+      <button class="btn-skip" onclick="showNamePopup()">⚡ Skip — Seedha Chat Karo</button>
+    </div>
+
+    <div class="error-msg" id="auth-error"></div>
+  </div>
+</div>
+
+<!-- NAME POPUP -->
+<div id="name-popup">
+  <div class="name-card">
+    <div class="name-emoji">👋</div>
+    <h2>Tera naam kya hai?</h2>
+    <p>Koi account nahi chahiye — bas naam daalo aur seedha chat shuru karo!</p>
+    <input
+      type="text"
+      id="guest-name"
+      placeholder="Apna naam yahan likho..."
+      maxlength="20"
+      onkeydown="if(event.key==='Enter') doGuestJoin()"
+    >
+    <button class="btn-go" onclick="doGuestJoin()">🚀 Chat Shuru Karo!</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app-screen">
+
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">📡 VideoConnect</div>
+      <div class="status-dot" id="status-dot"></div>
+      <span class="conn-status connecting" id="conn-status">Connect ho raha hai...</span>
+    </div>
+    <div class="header-right">
+      <span class="username-badge" id="header-username"></span>
+      <button class="btn-logout" onclick="logout()">Bahar Jao</button>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <div class="sidebar">
+      <div class="sidebar-title">
+        <span>Online Users</span>
+        <span class="online-count" id="online-count">0</span>
+      </div>
+      <div id="user-list">
+        <div class="no-users">5 km mein koi nahi abhi 😔<br><br>Doston ko invite karo!</div>
+      </div>
+    </div>
+
+    <div class="chat-area">
+      <div id="messages">
+        <div class="msg system">
+          <div class="msg-bubble">Welcome! 5 km radius mein sabko message aayega 🎉</div>
+        </div>
+      </div>
+      <div class="upload-indicator" id="upload-indicator">⏳ File upload ho rahi hai...</div>
+      <div class="input-area">
+        <input type="file" id="file-input" style="display:none" onchange="uploadFile(this)">
+        <button class="btn-attach" onclick="document.getElementById('file-input').click()">📎</button>
+        <textarea id="msg-input" placeholder="Message likho... (Enter se bhejo)" rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="btn-send" onclick="sendMessage()">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let ws = null;
+let token      = localStorage.getItem('vc_token');
+let myUserId   = localStorage.getItem('vc_user_id');
+let myUsername = localStorage.getItem('vc_username');
+let isGuest    = false;
+const SERVER   = window.location.origin;
+let reconnectTimer = null;
+
+if (token && myUsername) showApp();
+
+function switchTab(tab) {
+  document.getElementById('login-form').style.display  = tab === 'login'  ? 'block' : 'none';
+  document.getElementById('signup-form').style.display = tab === 'signup' ? 'block' : 'none';
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0)===(tab==='login')));
+  hideError();
+}
+
+function showError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function hideError() { document.getElementById('auth-error').style.display = 'none'; }
+
+function getLocation() {
+  if (!navigator.geolocation) { showError('GPS support nahi'); return; }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      document.getElementById('signup-lat').value = pos.coords.latitude.toFixed(6);
+      document.getElementById('signup-lon').value = pos.coords.longitude.toFixed(6);
+    },
+    () => showError('GPS nahi mila — manually daalo')
+  );
+}
+
+// ── SKIP ──
+function showNamePopup() {
+  document.getElementById('name-popup').classList.add('show');
+  setTimeout(() => document.getElementById('guest-name').focus(), 150);
+}
+
+function doGuestJoin() {
+  const name = document.getElementById('guest-name').value.trim();
+  if (name.length < 2) {
+    document.getElementById('guest-name').style.borderColor = 'var(--danger)';
+    return;
+  }
+  isGuest    = true;
+  myUserId   = 'guest_' + Math.random().toString(36).slice(2, 9);
+  myUsername = name;
+  token      = null;
+  document.getElementById('name-popup').classList.remove('show');
+  showApp();
+}
+
+// ── SIGNUP ──
+async function doSignup() {
+  hideError();
+  const username = document.getElementById('signup-username').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const lat      = parseFloat(document.getElementById('signup-lat').value);
+  const lon      = parseFloat(document.getElementById('signup-lon').value);
+  if (!username || !password) { showError('Dono fields chahiye'); return; }
+  if (password.length < 6)    { showError('Password min 6 characters'); return; }
+  if (isNaN(lat)||isNaN(lon)) { showError('Location daalo ya GPS dabao'); return; }
+  try {
+    const res  = await fetch(`${SERVER}/signup`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password,lat,lon}) });
+    const data = await res.json();
+    if (!res.ok) { showError(data||'Signup fail hua'); return; }
+    saveSession(data); showApp();
+  } catch(e) { showError('Server se connect nahi ho pa raha'); }
+}
+
+// ── LOGIN ──
+async function doLogin() {
+  hideError();
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!username||!password) { showError('Dono fields bharni hain'); return; }
+  try {
+    const res  = await fetch(`${SERVER}/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password}) });
+    const data = await res.json();
+    if (!res.ok) { showError(data||'Login fail hua'); return; }
+    saveSession(data); showApp();
+  } catch(e) { showError('Server se connect nahi ho pa raha'); }
+}
+
+function saveSession(data) {
+  token=data.token; myUserId=data.user_id; myUsername=data.username;
+  localStorage.setItem('vc_token',data.token);
+  localStorage.setItem('vc_user_id',data.user_id);
+  localStorage.setItem('vc_username',data.username);
+}
+
+function logout() { localStorage.clear(); if(ws) ws.close(); location.reload(); }
+
+// ── APP ──
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display  = 'flex';
+  document.getElementById('header-username').textContent = '👤 ' + myUsername;
+  connectWebSocket();
+}
+
+// ── WEBSOCKET ──
+function connectWebSocket() {
+  setStatus('connecting');
+  const proto = location.protocol==='https:' ? 'wss:' : 'ws:';
+  const wsUrl = isGuest
+    ? `${proto}//${location.host}/ws?guest=true&username=${encodeURIComponent(myUsername)}&user_id=${myUserId}`
+    : `${proto}//${location.host}/ws?token=${token}`;
+
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    setStatus('connected');
+    addSystemMsg('Connected! Nearby users dikh rahe hain 🟢');
+    ws.send(JSON.stringify({type:'get_online_users'}));
+  };
+
+  ws.onmessage = (e) => {
+    try { handleServerEvent(JSON.parse(e.data)); } catch(err) {}
+  };
+
+  ws.onclose = () => {
+    setStatus('disconnected');
+    addSystemMsg('Connection toot gayi — 3 sec mein reconnect...');
+    clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(connectWebSocket, 3000);
+  };
+
+  ws.onerror = () => setStatus('disconnected');
+}
+
+function setStatus(s) {
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('conn-status');
+  dot.style.background = s==='connected' ? 'var(--success)' : s==='connecting' ? 'orange' : 'var(--danger)';
+  txt.className = `conn-status ${s}`;
+  txt.textContent = s==='connected' ? 'Connected' : s==='connecting' ? 'Connect ho raha hai...' : 'Disconnected';
+}
+
+function handleServerEvent(data) {
+  switch(data.event) {
+    case 'new_message':  renderMessage(data.message); break;
+    case 'online_users': renderOnlineUsers(data.users); break;
+    case 'user_joined':
+      addSystemMsg(`${data.username} ne join kiya 👋`);
+      ws.send(JSON.stringify({type:'get_online_users'})); break;
+    case 'user_left':
+      addSystemMsg(`${data.username} chala gaya`);
+      ws.send(JSON.stringify({type:'get_online_users'})); break;
+    default:
+      if (data.from_user) renderMessage(data);
+      else if (data.content && data.content.text) {
+        try { handleServerEvent(JSON.parse(data.content.text)); } catch(e) {}
+      }
+  }
+}
+
+function renderOnlineUsers(users) {
+  const list = document.getElementById('user-list');
+  document.getElementById('online-count').textContent = users.length;
+  if (!users.length) {
+    list.innerHTML = `<div class="no-users">5 km mein koi nahi abhi 😔<br><br>Doston ko bulao!</div>`;
+    return;
+  }
+  list.innerHTML = users.map(u => `
+    <div class="user-item">
+      <div class="user-avatar">${u.username[0].toUpperCase()}</div>
+      <div class="user-info">
+        <div class="user-name">${escHtml(u.username)}</div>
+        <div class="user-dist">📍 ${u.distance_km} km</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderMessage(msg) {
+  const isMe  = msg.from_user === myUserId;
+  const cls   = isMe ? 'mine' : 'theirs';
+  const time  = new Date(msg.timestamp).toLocaleTimeString('hi-IN',{hour:'2-digit',minute:'2-digit'});
+  const sender= isMe ? 'Tum' : escHtml(msg.from_username);
+  const c = msg.content;
+  let bubble = '';
+  if (c.type==='text')  bubble = `<div class="msg-bubble">${escHtml(c.text)}</div>`;
+  else if (c.type==='image') bubble = `<img class="msg-image" src="${c.url}" onclick="window.open('${c.url}','_blank')" loading="lazy">`;
+  else if (c.type==='file')  bubble = `<a class="msg-file" href="${c.url}" download="${escHtml(c.filename)}" target="_blank"><span>📄</span><span>${escHtml(c.filename)}</span></a>`;
+  addMsgHtml(`<div class="msg ${cls}"><div class="msg-sender">${sender}</div>${bubble}<div class="msg-time">${time}</div></div>`);
+}
+
+function addSystemMsg(text) {
+  addMsgHtml(`<div class="msg system"><div class="msg-bubble">${escHtml(text)}</div></div>`);
+}
+
+function addMsgHtml(html) {
+  const c = document.getElementById('messages');
+  c.insertAdjacentHTML('beforeend', html);
+  c.scrollTop = c.scrollHeight;
+}
+
+function sendMessage() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({type:'send_text', text}));
+  renderMessage({ from_user:myUserId, from_username:myUsername, content:{type:'text',text}, timestamp:new Date().toISOString() });
+  input.value = ''; input.style.height = 'auto';
+}
+
+function handleKey(e) { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+
+async function uploadFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 10*1024*1024) { alert('File 10MB se badi hai!'); input.value=''; return; }
+  document.getElementById('upload-indicator').style.display = 'block';
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const headers = token ? {'Authorization':`Bearer ${token}`} : {};
+    const res  = await fetch(`${SERVER}/upload`, {method:'POST', headers, body:fd});
+    const data = await res.json();
+    if (!res.ok) { alert('Upload fail: '+(data||'Error')); return; }
+    const isImage = data.file_type==='image';
+    ws.send(JSON.stringify({type:'send_file', url:data.url, filename:data.filename, is_image:isImage}));
+    renderMessage({ from_user:myUserId, from_username:myUsername, content:{type:isImage?'image':'file', url:data.url, filename:data.filename}, timestamp:new Date().toISOString() });
+  } catch(e) { alert('Upload error: '+e.message); }
+  finally { document.getElementById('upload-indicator').style.display='none'; input.value=''; }
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
