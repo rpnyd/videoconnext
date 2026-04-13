@@ -74,6 +74,8 @@ pub enum WsIncoming {
     SendFile { url: String, filename: String, is_image: bool },
     /// Online users ki list maango
     GetOnlineUsers,
+    /// Heartbeat — connection alive rakhne ke liye
+    Ping,
 }
 
 // =====================================================================
