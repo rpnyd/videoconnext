@@ -548,6 +548,15 @@ function connectWebSocket() {
     setStatus('connected');
     addSystemMsg('Connected! Nearby users dikh rahe hain 🟢');
     ws.send(JSON.stringify({type:'get_online_users'}));
+
+    // Heartbeat — har 20 sec mein ping bhejo
+    // Render free tier 30 sec mein disconnect karta hai — yeh usse rokta hai
+    clearInterval(window.pingTimer);
+    window.pingTimer = setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({type: 'ping'}));
+      }
+    }, 20000);
   };
 
   ws.onmessage = (e) => {
@@ -555,6 +564,7 @@ function connectWebSocket() {
   };
 
   ws.onclose = () => {
+    clearInterval(window.pingTimer); // heartbeat band karo
     setStatus('disconnected');
     addSystemMsg('Connection toot gayi — 3 sec mein reconnect...');
     clearTimeout(reconnectTimer);
