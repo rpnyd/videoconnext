@@ -68,7 +68,8 @@ async fn main() {
     // ----------------------------------------------------------------
     // SERVER START
     // ----------------------------------------------------------------
-    let addr = "0.0.0.0:3000";
+    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+let addr = format!("0.0.0.0:{}", port);
     let listener = tokio::net::TcpListener::bind(addr)
         .await
         .expect("Port 3000 already use mein hai, ya permission nahi");
