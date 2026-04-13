@@ -214,6 +214,11 @@ async fn handle_incoming_text(
             // Abhi sirf log karte hai — Phase 2 mein fix karenge
             tracing::info!("{} ne {} nearby users dekhe", username, users.len());
         }
+
+        // ----- Heartbeat ping — Render free tier ke liye -----
+        WsIncoming::Ping => {
+            // Kuch nahi karna — bas message aaya, connection alive hai
+        }
     }
 }
 
