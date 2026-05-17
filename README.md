@@ -1,53 +1,66 @@
-# VideoConnect — Phase 1 Complete Guide
-## Rust + Axum + WebSocket | Local Chat + File Share + 5km Radius
+VideoConnect — Phase 1 Complete Guide
+
+Rust + Axum + WebSocket | Local Chat + File Sharing + 5km Radius
+
 
 ---
 
-## STEP 1 — Rust Install Karo
+STEP 1 — Install Rust
 
-### Windows:
-1. https://rustup.rs pe jao
-2. `rustup-init.exe` download karo
-3. Install karo (default options theek hain)
-4. Terminal reopen karo
-5. Check karo: `rustc --version`
+Windows:
 
-### Linux / Mac:
-```bash
+1. Go to [Rustup](https://rustup.rs?utm_source=chatgpt.com)
+
+
+2. Download rustup-init.exe
+
+
+3. Install it (default options are fine)
+
+
+4. Reopen the terminal
+
+
+5. Verify installation:
+
+
+
+rustc --version
+
+Linux / macOS:
+
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
-rustc --version   # 1.70+ dikhna chahiye
-```
+rustc --version   # Should show 1.70+
+
 
 ---
 
-## STEP 2 — Project Structure Banao
+STEP 2 — Create the Project Structure
 
-```bash
 cargo new videoconnect
 cd videoconnect
 
-# Folders banao
+# Create folders
 mkdir -p src/auth
 mkdir -p src/chat
 mkdir -p src/location
 mkdir -p src/files
 mkdir -p static
 mkdir -p uploads
-```
+
 
 ---
 
-## STEP 3 — Files Copy Karo
+STEP 3 — Copy the Files
 
-Neeche di gayi har file apne project mein EXACTLY usi path pe rakho:
+Place every file below in the EXACT same path inside your project:
 
-```
 videoconnect/
 ├── Cargo.toml
 ├── static/
 │   └── index.html          ← Frontend
-├── uploads/                ← Photos/files yahan jayenge (khali rakho)
+├── uploads/                ← Uploaded photos/files will go here (keep empty)
 └── src/
     ├── main.rs
     ├── state.rs
@@ -65,148 +78,252 @@ videoconnect/
     └── files/
         ├── mod.rs
         └── handlers.rs
-```
+
 
 ---
 
-## STEP 4 — Server Chalao
+STEP 4 — Run the Server
 
-```bash
 cd videoconnect
 cargo run
-```
 
-Pehli baar mein 2-5 minute lagenge (dependencies download hongi).
-Yeh dikhega jab ready ho:
+The first run may take 2–5 minutes because dependencies will be downloaded.
 
-```
+When the server is ready, you should see:
+
 INFO videoconnect: ==========================================
-INFO videoconnect:   VideoConnect server chal raha hai!
+INFO videoconnect:   VideoConnect server is running!
 INFO videoconnect:   http://localhost:3000
 INFO videoconnect: ==========================================
-```
+
 
 ---
 
-## STEP 5 — Test Karo
+STEP 5 — Test the App
 
-### Browser test:
-1. `http://localhost:3000` kholo
-2. Signup karo — GPS button dabao ya lat/lon manually daalo
-   - Mumbai test ke liye: lat = 19.0760, lon = 72.8777
-3. Doosre browser ya incognito mein signup karo (alag username, same location)
-4. Chat karo! File bhi bhej sakte ho 📎
+Browser Test
 
-### API test (optional — Postman ya curl):
+1. Open: http://localhost:3000
 
-**Signup:**
-```bash
+
+2. Sign up
+
+Press the GPS button OR manually enter latitude/longitude
+
+Example for Mumbai:
+
+lat = 19.0760
+
+lon = 72.8777
+
+
+
+
+3. Open another browser or incognito window
+
+
+4. Sign up using a different username but the same location
+
+
+5. Start chatting! You can also share files 📎
+
+
+
+
+---
+
+API Test (Optional — Postman or curl)
+
+Signup
+
 curl -X POST http://localhost:3000/signup \
   -H "Content-Type: application/json" \
   -d '{"username":"ali","password":"pass123","lat":19.0760,"lon":72.8777}'
-```
 
-**Login:**
-```bash
+Login
+
 curl -X POST http://localhost:3000/login \
   -H "Content-Type: application/json" \
   -d '{"username":"ali","password":"pass123"}'
-```
 
-**WebSocket test (wscat tool se):**
-```bash
+WebSocket Test (Using wscat)
+
+Install wscat:
+
 npm install -g wscat
+
+Connect:
+
 wscat -c "ws://localhost:3000/ws?token=YOUR_TOKEN_HERE"
 
-# Phir type karo:
+Send messages:
+
 {"type":"send_text","text":"Hello!"}
 {"type":"get_online_users"}
-```
+
 
 ---
 
-## PHASE 1 DONE CHECK ✅
+PHASE 1 COMPLETION CHECKLIST ✅
 
-- [ ] 3 browsers mein chat kar sako
-- [ ] Image share ho jaye
-- [ ] File share ho jaye
-- [ ] Online users list live update ho
-- [ ] Signup/Login kaam kare
+[ ] Chat works across 3 browser windows
+
+[ ] Image sharing works
+
+[ ] File sharing works
+
+[ ] Online users update live
+
+[ ] Signup/Login works correctly
+
+
 
 ---
 
-## COMMON ERRORS AUR FIXES
+COMMON ERRORS AND FIXES
 
-### Error: `error[E0433]: failed to resolve`
-**Fix:** `cargo clean` phir `cargo run`
+Error: error[E0433]: failed to resolve
 
-### Error: `Address already in use`
-**Fix:** Port 3000 koi aur use kar raha hai
-```bash
-# Windows
+Fix:
+
+cargo clean
+cargo run
+
+
+---
+
+Error: Address already in use
+
+Cause:
+
+Port 3000 is already being used.
+
+Fix:
+
+Windows
+
 netstat -ano | findstr :3000
 taskkill /PID <pid> /F
 
-# Linux/Mac
+Linux/macOS
+
 lsof -ti:3000 | xargs kill
-```
 
-### Error: Cargo.toml mein version issue
-**Fix:** `cargo update` run karo
-
-### Browser mein "Cannot connect to WebSocket"
-**Fix:** Server chal raha hai? `cargo run` karo pehle
-
-### GPS kaam nahi kar raha signup mein
-**Fix:** Manually daalo — Mumbai: `19.0760, 72.8777` | Delhi: `28.6139, 77.2090`
 
 ---
 
-## WEBSOCKET MESSAGE FORMAT
+Error: Version issue in Cargo.toml
 
-### Browser → Server:
+Fix:
 
-```json
-// Text bhejo
-{"type": "send_text", "text": "Hello bhai!"}
+cargo update
 
-// File/Image bhejo (pehle /upload se URL lo)
-{"type": "send_file", "url": "/files/abc.jpg", "filename": "photo.jpg", "is_image": true}
 
-// Online users maango
+---
+
+Browser says “Cannot connect to WebSocket”
+
+Fix:
+
+Make sure the server is running:
+
+cargo run
+
+
+---
+
+GPS does not work during signup
+
+Fix:
+
+Enter coordinates manually.
+
+Examples:
+
+Mumbai → 19.0760, 72.8777
+
+Delhi → 28.6139, 77.2090
+
+
+
+---
+
+WEBSOCKET MESSAGE FORMAT
+
+Browser → Server
+
+Send text message
+
+{"type": "send_text", "text": "Hello bro!"}
+
+Send file/image
+
+(Upload first using /upload and get the URL)
+
+{
+  "type": "send_file",
+  "url": "/files/abc.jpg",
+  "filename": "photo.jpg",
+  "is_image": true
+}
+
+Request online users
+
 {"type": "get_online_users"}
-```
 
-### Server → Browser:
 
-```json
-// Naya message
+---
+
+Server → Browser
+
+New message
+
 {"event": "new_message", "message": {...}}
 
-// Online users list
-{"event": "online_users", "users": [{"username":"ali","distance_km":0.5}]}
+Online users list
 
-// User join/leave
+{
+  "event": "online_users",
+  "users": [
+    {
+      "username":"ali",
+      "distance_km":0.5
+    }
+  ]
+}
+
+User joined/left
+
 {"event": "user_joined", "username": "ali"}
 {"event": "user_left",   "username": "ali"}
-```
+
 
 ---
 
-## NEXT STEPS — Phase 2 Ready Hone Ke Baad
+NEXT STEPS — After Phase 1
 
-- [ ] SQLite se messages save karo (ab memory mein hain, restart pe gayab)
-- [ ] Rate limiting (spam rokna)
-- [ ] Input validation aur better error handling
-- [ ] Reconnect par message history
+[ ] Save messages using SQLite (currently stored in memory only)
+
+[ ] Add rate limiting (prevent spam)
+
+[ ] Improve input validation and error handling
+
+[ ] Restore chat history after reconnect
+
+
 
 ---
 
-## PROJECT INFO
+PROJECT INFO
 
-- **Stack:** Rust + Axum + WebSocket + HTML/CSS/JS
-- **Phase:** 1 of 4
-- **Port:** 3000
-- **Radius:** 5 km (Haversine formula)
-- **Auth:** JWT (7 days valid)
-- **Storage:** In-memory (Phase 2 mein DB aayega)
+Stack: Rust + Axum + WebSocket + HTML/CSS/JS
+
+Current Phase: 1 of 4
+
+Port: 3000
+
+Chat Radius: 5 km (using Haversine formula)
+
+Authentication: JWT (valid for 7 days)
+
+Storage: In-memory (database coming in Phase 2)
